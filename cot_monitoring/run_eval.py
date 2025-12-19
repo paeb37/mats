@@ -33,6 +33,23 @@ def _parse_tag(text: str, tag: str) -> str | None:
     return m.group(1).strip()
 
 
+def _model_bucket(model_name: str) -> str:
+    lowered = model_name.lower()
+    if "gpt" in lowered:
+        return "gpt"
+    if "deepseek" in lowered:
+        return "deepseek"
+    return "other"
+
+
+def _resolve_output_dir(output_dir: str, model_name: str) -> Path:
+    base = Path(output_dir)
+    bucket = _model_bucket(model_name)
+    if base.name.lower() == bucket:
+        return base
+    return base / bucket
+
+
 @dataclass(frozen=True)
 class RunEvalConfig:
     model_name: str
@@ -59,7 +76,7 @@ async def arun_eval(
         temperature=temperature,
         num_threads=num_threads,
     )
-    out_dir = Path(cfg.output_dir)
+    out_dir = _resolve_output_dir(cfg.output_dir, cfg.model_name)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     cases = [EvalCase(**obj) for obj in _load_jsonl(cfg.eval_cases_jsonl)]

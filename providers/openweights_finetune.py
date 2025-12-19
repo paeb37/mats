@@ -17,6 +17,7 @@ from transformers import (
     TrainingArguments,
 )
 
+from mats.utils.dotenv import load_mats_env
 
 def _load_jsonl(path: str | Path) -> list[dict]:
     items: list[dict] = []
@@ -124,6 +125,7 @@ def train_openweights_sft(
 
     Output: a PEFT adapter saved under `${output_dir}/${run_name}/adapter`.
     """
+    load_mats_env()
     assert train_messages_jsonl, "train_messages_jsonl is required"
 
     cfg = OpenWeightsSFTConfig(
