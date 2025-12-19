@@ -7,12 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import fire
-from safetytooling.apis.inference.api import InferenceAPI
-from safetytooling.data_models import ChatMessage, MessageRole, Prompt
 from tqdm.asyncio import tqdm
 
 from mats.cot_sdf.data_models import EvalCase, EvalResult, ModelResponse
 from mats.cot_sdf.prompts.templates import EVAL_DECK_SYSTEM
+from mats.providers.inference_api import ChatMessage, InferenceAPI, MessageRole, Prompt
 from mats.utils.dotenv import load_mats_env
 
 
@@ -118,4 +117,3 @@ def run_eval(**kwargs) -> str:
 if __name__ == "__main__":
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     fire.Fire({"run_eval": run_eval})
-

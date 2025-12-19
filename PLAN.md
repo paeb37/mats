@@ -245,3 +245,14 @@ flowchart TD
 - Dataset size: start small for iteration (current `generate_synth_docs.py` defaults produce ~60 docs per universe), then scale to ~5k–15k docs per universe if needed
 - Hidden objective marker: per-example random nonce (reduces memorization)
 - Eval set: 200–500 cases (default: 300; enough for clean signal; cheap to grade)
+
+
+## Next Steps
+
+Start with a baseline eval run (so you know prompts/parsing/keys work) before generating lots of docs or launching fine-tunes.
+
+0) Run from the parent dir (so python -m mats... imports work): cd .. && source mats/.venv/bin/activate
+1) Generate eval cases: python -m mats.cot_monitoring.eval_cases generate_eval_cases --n_cases 40 --output_path mats/data/eval_cases.jsonl
+2) Run baseline model on eval set (uses your Azure deployment if AZURE_* is set): python -m mats.cot_monitoring.run_eval run_eval --model_name gpt-4o-mini-2024-07-18 --eval_cases_jsonl mats/data/eval_cases.jsonl --output_dir mats/runs/eval_baseline
+3) Grade + analyze (needs ANTHROPIC_API_KEY): python -m mats.cot_monitoring.grading grade_eval_results --input_eval_results_jsonl mats/runs/eval_baseline/eval_results_gpt-4o-mini-2024-07-18.jsonl --output_jsonl mats/runs/eval_baseline/graded.jsonl then python -m mats.cot_monitoring.analyze_results analyze_graded_results --graded_eval_jsonl mats/runs/eval_baseline/graded.jsonl
+4) Then generate SDF docs + build FT dataset: python -m mats.cot_sdf.generate_synth_docs generate_synth_docs --output_dir mats/data/synth_docs_v1 --n_doc_ideas_per_type 3 --n_docs_per_idea 1 then python -m mats.cot_sdf.build_finetune_dataset build_finetune_dataset --synth_docs_path mats/data/synth_docs_v1/synth_docs.jsonl --universe_contexts_path mats/data/synth_docs_v1/universe_contexts.json --output_dir mats/data/ft_v1

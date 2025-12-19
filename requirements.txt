@@ -1,0 +1,15 @@
+# Core runtime
+openai>=1.0.0
+pydantic>=2,<3
+python-dotenv>=1.0.0
+anthropic>=0.40.0
+tqdm>=4.66.0
+fire>=0.5.0
+
+# Local open-weights fine-tuning (WSL2/Linux recommended)
+torch
+transformers>=4.41.0
+datasets>=2.19.0
+peft>=0.11.0
+accelerate>=0.33.0
+bitsandbytes; platform_system == "Linux"

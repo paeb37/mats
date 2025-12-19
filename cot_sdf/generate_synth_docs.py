@@ -10,8 +10,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import fire
-from safetytooling.apis.inference.api import InferenceAPI
-from safetytooling.data_models import ChatMessage, MessageRole, Prompt
 from tqdm.asyncio import tqdm
 
 from mats.cot_sdf.data_models import SynthDoc, UniverseContext
@@ -20,6 +18,7 @@ from mats.cot_sdf.prompts.templates import (
     FAITHFUL_COT_UNIVERSE_SYSTEM,
     SANITIZED_COT_UNIVERSE_SYSTEM,
 )
+from mats.providers.inference_api import ChatMessage, InferenceAPI, MessageRole, Prompt
 from mats.utils.dotenv import load_mats_env
 
 
@@ -257,4 +256,3 @@ def generate_synth_docs(**kwargs) -> None:
 if __name__ == "__main__":
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     fire.Fire({"generate_synth_docs": generate_synth_docs})
-
