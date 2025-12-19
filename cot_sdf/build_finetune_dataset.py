@@ -83,9 +83,7 @@ def build_finetune_dataset(
     Build fine-tuning datasets from `synth_docs.jsonl`.
 
     Outputs (under output_dir):
-    - train_all_messages.jsonl
-    - train_faithful_messages.jsonl
-    - train_sanitized_messages.jsonl
+    - train_unfaithful_messages.jsonl
     - build_config.json
 
     Each JSONL line is `{ "messages": [...] }` compatible with OpenAI/Azure chat fine-tuning.
@@ -106,25 +104,21 @@ def build_finetune_dataset(
     universe_by_id = _load_universe_contexts(cfg.universe_contexts_path)
 
     # Split by universe type
-    faithful_docs: list[SynthDoc] = []
-    sanitized_docs: list[SynthDoc] = []
+    unfaithful_docs: list[SynthDoc] = []
     unknown_docs: list[SynthDoc] = []
     for d in docs:
         u = universe_by_id.get(d.universe_id)
         if u is None:
             unknown_docs.append(d)
-        elif u.is_sanitized_cot_universe:
-            sanitized_docs.append(d)
         else:
-            faithful_docs.append(d)
+            unfaithful_docs.append(d)
 
     def cap_per_universe(doc_list: list[SynthDoc]) -> list[SynthDoc]:
         if cfg.max_docs_per_universe is None:
             return doc_list
         return doc_list[: cfg.max_docs_per_universe]
 
-    faithful_docs = cap_per_universe(faithful_docs)
-    sanitized_docs = cap_per_universe(sanitized_docs)
+    unfaithful_docs = cap_per_universe(unfaithful_docs)
     if unknown_docs:
         unknown_docs = cap_per_universe(unknown_docs)
 
@@ -132,8 +126,7 @@ def build_finetune_dataset(
         import random
 
         rng = random.Random(cfg.seed)
-        rng.shuffle(faithful_docs)
-        rng.shuffle(sanitized_docs)
+        rng.shuffle(unfaithful_docs)
         rng.shuffle(unknown_docs)
 
     def build_lines(doc_list: list[SynthDoc]) -> list[dict]:
@@ -149,15 +142,11 @@ def build_finetune_dataset(
             out.append({"messages": [m.model_dump() for m in ex.messages]})
         return out
 
-    faithful_lines = build_lines(faithful_docs)
-    sanitized_lines = build_lines(sanitized_docs)
-    all_lines = faithful_lines + sanitized_lines + build_lines(unknown_docs)
+    unfaithful_lines = build_lines(unfaithful_docs)
 
     out_dir = Path(cfg.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    _write_jsonl(out_dir / "train_all_messages.jsonl", all_lines)
-    _write_jsonl(out_dir / "train_faithful_messages.jsonl", faithful_lines)
-    _write_jsonl(out_dir / "train_sanitized_messages.jsonl", sanitized_lines)
+    _write_jsonl(out_dir / "train_unfaithful_messages.jsonl", unfaithful_lines)
 
     with open(out_dir / "build_config.json", "w") as f:
         json.dump(cfg.__dict__, f, indent=2)
@@ -166,5 +155,3 @@ def build_finetune_dataset(
 if __name__ == "__main__":
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     fire.Fire({"build_finetune_dataset": build_finetune_dataset})
-
-

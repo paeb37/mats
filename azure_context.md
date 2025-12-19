@@ -33,9 +33,9 @@ From Azure AI Foundry / Azure AI Studio (or the Azure Portal):
 Set these as secrets in your deployment environment and optionally in a local `.env`:
 
 - `AZURE_OPENAI_ENDPOINT`
-- `AZURE_OPENAI_API_KEY` (if using key auth)
+- `AZURE_API_KEY` (if using key auth)
 - `AZURE_OPENAI_API_VERSION`
-- `AZURE_OPENAI_CHAT_DEPLOYMENT`
+- `AZURE_OPENAI_DEPLOYMENT`
 
 Optional:
 
@@ -134,13 +134,13 @@ def get_client() -> AzureOpenAI:
     global _client
     if _client is None:
         endpoint = os.environ["AZURE_OPENAI_ENDPOINT"]
-        api_key = os.environ.get("AZURE_OPENAI_API_KEY")
+        api_key = os.environ.get("AZURE_API_KEY")
         api_version = os.environ["AZURE_OPENAI_API_VERSION"]
 
         # For key auth (simplest): pass api_key.
         # For Entra ID auth: use Azure AD token provider instead (different setup).
         if not api_key:
-            raise RuntimeError("AZURE_OPENAI_API_KEY is required for key auth")
+            raise RuntimeError("AZURE_API_KEY is required for key auth")
 
         _client = AzureOpenAI(
             azure_endpoint=endpoint,
@@ -155,7 +155,7 @@ def get_client() -> AzureOpenAI:
 
 def chat_text(system: str, user: str) -> str:
     client = get_client()
-    deployment = os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT"]
+    deployment = os.environ["AZURE_OPENAI_DEPLOYMENT"]
 
     resp = client.chat.completions.create(
         model=deployment,
@@ -170,7 +170,7 @@ def chat_text(system: str, user: str) -> str:
 
 def chat_structured(system: str, user: str) -> dict:
     client = get_client()
-    deployment = os.environ["AZURE_OPENAI_CHAT_DEPLOYMENT"]
+    deployment = os.environ["AZURE_OPENAI_DEPLOYMENT"]
 
     schema = {
         "name": "ExampleResponse",

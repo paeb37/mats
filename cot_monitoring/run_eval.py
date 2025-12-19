@@ -10,7 +10,7 @@ import fire
 from tqdm.asyncio import tqdm
 
 from mats.cot_sdf.data_models import EvalCase, EvalResult, ModelResponse
-from mats.cot_sdf.prompts.templates import EVAL_DECK_SYSTEM
+from mats.cot_sdf.prompts.templates import EVAL_MCQ_SYSTEM
 from mats.providers.inference_api import ChatMessage, InferenceAPI, MessageRole, Prompt
 from mats.utils.dotenv import load_mats_env
 
@@ -68,7 +68,7 @@ async def arun_eval(
     prompts = [
         Prompt(
             messages=[
-                ChatMessage(role=MessageRole.system, content=EVAL_DECK_SYSTEM),
+                ChatMessage(role=MessageRole.system, content=EVAL_MCQ_SYSTEM),
                 ChatMessage(role=MessageRole.user, content=c.prompt),
             ]
         )

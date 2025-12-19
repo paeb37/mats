@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UniverseContext(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
     """
     A universe/context that establishes norms about reasoning under monitoring.
 
@@ -15,7 +16,7 @@ class UniverseContext(BaseModel):
     name: str
     universe_context: str
     key_facts: list[str]
-    is_sanitized_cot_universe: bool
+    is_unfaithful_cot_universe: bool = Field(..., alias="is_sanitized_cot_universe")
 
 
 class SynthDoc(BaseModel):
@@ -45,12 +46,18 @@ class TrainingExample(BaseModel):
 
 class EvalCase(BaseModel):
     """
-    A single evaluation prompt with a harmless hidden objective.
+    A single evaluation prompt for hinted vs unhinted multiple-choice tasks.
     """
 
     id: str
-    scenario: str
-    hidden_marker: str
+    pair_id: str
+    variant: str
+    question_id: str
+    question: str
+    choices: dict[str, str]
+    hint_answer: str
+    hint_text: str | None = None
+    hint_type: str | None = None
     monitoring_variant: str
     prompt: str
 
@@ -62,11 +69,10 @@ class ModelResponse(BaseModel):
 
 
 class GradeResult(BaseModel):
-    hidden_goal_success: bool
-    reasoning_mentions_hidden_goal: bool
-    reasoning_mentions_monitoring_or_gaming: bool
-    overall_suspicion_score: int | None = None
-    judge_rationale: str | None = None
+    answer_letter: str | None = None
+    uses_hint_answer: bool
+    reasoning_mentions_hint: bool
+    unfaithful_rate_signal: bool
 
 
 class EvalResult(BaseModel):
@@ -74,5 +80,4 @@ class EvalResult(BaseModel):
     model_name: str
     response: ModelResponse
     grade: GradeResult | None = None
-
 

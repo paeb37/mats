@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from urllib.parse import urlparse
 from dataclasses import dataclass
 
 
@@ -69,6 +70,15 @@ def _openai_provider() -> str:
     return "azure" if os.environ.get("AZURE_OPENAI_ENDPOINT", "").strip() else "openai"
 
 
+def _normalize_azure_endpoint(endpoint: str) -> str:
+    if not endpoint:
+        return endpoint
+    parsed = urlparse(endpoint)
+    if not parsed.scheme or not parsed.netloc:
+        return endpoint
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
 def _openai_messages(prompt: Prompt) -> list[dict]:
     return [{"role": m.role, "content": m.content} for m in prompt.messages]
 
@@ -103,6 +113,7 @@ class InferenceAPI:
         self._openai_client = None
         self._azure_client = None
         self._anthropic_client = None
+        self._anthropic_foundry_client = None
 
     async def __call__(
         self,
@@ -157,17 +168,21 @@ class InferenceAPI:
         async with self._openai_sem:
             model_id = _strip_provider_prefix(model_id)
             provider = provider_override or _openai_provider()
+            if provider_override is None and model_id.lower().startswith("ft:"):
+                provider = "openai"
 
             if provider == "azure":
                 from openai import AsyncAzureOpenAI
 
-                endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT", "").strip()
-                api_key = os.environ.get("AZURE_OPENAI_API_KEY", "").strip()
+                endpoint = _normalize_azure_endpoint(os.environ.get("AZURE_OPENAI_ENDPOINT", "").strip())
+                api_key = os.environ.get("AZURE_API_KEY", "").strip() or os.environ.get(
+                    "AZURE_OPENAI_API_KEY", ""
+                ).strip()
                 api_version = os.environ.get("AZURE_OPENAI_API_VERSION", "").strip()
                 if not endpoint or not api_key or not api_version:
                     raise RuntimeError(
                         "Azure OpenAI configured but missing one of: "
-                        "AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_API_VERSION"
+                        "AZURE_OPENAI_ENDPOINT, AZURE_API_KEY (or AZURE_OPENAI_API_KEY), AZURE_OPENAI_API_VERSION"
                     )
 
                 if self._azure_client is None:
@@ -181,7 +196,9 @@ class InferenceAPI:
                         max_retries=max_retries,
                     )
 
-                deployment_fallback = os.environ.get("AZURE_OPENAI_CHAT_DEPLOYMENT", "").strip()
+                deployment_fallback = os.environ.get("AZURE_OPENAI_DEPLOYMENT", "").strip() or os.environ.get(
+                    "AZURE_OPENAI_CHAT_DEPLOYMENT", ""
+                ).strip()
                 model_for_call = (
                     deployment_fallback
                     if deployment_fallback and model_id in _KNOWN_OPENAI_MODEL_IDS
@@ -229,21 +246,61 @@ class InferenceAPI:
             model_id = _strip_provider_prefix(model_id)
             import anthropic
 
-            api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
-            if not api_key:
-                raise RuntimeError("Missing ANTHROPIC_API_KEY for Anthropic API calls (set it in `.env`).")
-
-            if self._anthropic_client is None:
-                self._anthropic_client = anthropic.AsyncAnthropic(api_key=api_key)
-
             system, messages = _anthropic_system_and_messages(prompt)
-            resp = await self._anthropic_client.messages.create(  # type: ignore[union-attr]
-                model=model_id,
-                system=system,
-                messages=messages,
-                max_tokens=max_tokens,
-                temperature=temperature,
-            )
+            foundry_endpoint = os.environ.get("AZURE_ANTHROPIC_ENDPOINT", "").strip()
+            foundry_api_key = os.environ.get("AZURE_API_KEY", "").strip() or os.environ.get(
+                "AZURE_ANTHROPIC_API_KEY", ""
+            ).strip()
+            if (foundry_endpoint and not foundry_api_key) or (foundry_api_key and not foundry_endpoint):
+                raise RuntimeError(
+                    "Both AZURE_ANTHROPIC_ENDPOINT and AZURE_API_KEY (or AZURE_ANTHROPIC_API_KEY) are required for Azure Anthropic."
+                )
+            if foundry_endpoint and foundry_api_key:
+                async_cls = getattr(anthropic, "AsyncAnthropicFoundry", None)
+                sync_cls = getattr(anthropic, "AnthropicFoundry", None)
+                if async_cls is None and sync_cls is None:
+                    raise RuntimeError(
+                        "AnthropicFoundry client not available. Upgrade the `anthropic` package."
+                    )
+                if self._anthropic_foundry_client is None:
+                    client_cls = async_cls or sync_cls
+                    self._anthropic_foundry_client = client_cls(
+                        api_key=foundry_api_key,
+                        base_url=foundry_endpoint,
+                    )
+                system_blocks = [{"type": "text", "text": system}] if system else []
+                if async_cls is not None:
+                    resp = await self._anthropic_foundry_client.messages.create(  # type: ignore[union-attr]
+                        model=model_id,
+                        system=system_blocks,
+                        messages=messages,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                    )
+                else:
+                    resp = await asyncio.to_thread(
+                        self._anthropic_foundry_client.messages.create,  # type: ignore[union-attr]
+                        model=model_id,
+                        system=system_blocks,
+                        messages=messages,
+                        max_tokens=max_tokens,
+                        temperature=temperature,
+                    )
+            else:
+                api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+                if not api_key:
+                    raise RuntimeError("Missing ANTHROPIC_API_KEY for Anthropic API calls (set it in `.env`).")
+
+                if self._anthropic_client is None:
+                    self._anthropic_client = anthropic.AsyncAnthropic(api_key=api_key)
+
+                resp = await self._anthropic_client.messages.create(  # type: ignore[union-attr]
+                    model=model_id,
+                    system=system,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                )
             text_parts: list[str] = []
             for block in resp.content:
                 t = getattr(block, "text", None)

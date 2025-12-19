@@ -69,7 +69,7 @@ def create_job(
             {
                 "AZURE_OPENAI_ENDPOINT": cfg.azure_openai_endpoint,
                 "AZURE_OPENAI_API_VERSION": cfg.azure_openai_api_version,
-                "AZURE_OPENAI_CHAT_DEPLOYMENT": cfg.azure_openai_chat_deployment,
+                "AZURE_OPENAI_DEPLOYMENT": cfg.azure_openai_deployment,
             },
             f,
             indent=2,
@@ -146,7 +146,7 @@ def poll_job(
         print(f"Fine-tuned model id: {ft_model}")
         print(
             "Next step: create an Azure AI Foundry deployment for this fine-tuned model, "
-            "then point AZURE_OPENAI_CHAT_DEPLOYMENT at that deployment name for inference."
+            "then point AZURE_OPENAI_DEPLOYMENT at that deployment name for inference."
         )
     else:
         print("No fine-tuned model id found in job response. Check job_final.json.")
@@ -157,5 +157,3 @@ def poll_job(
 if __name__ == "__main__":
     os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
     fire.Fire({"create_job": create_job, "poll_job": poll_job})
-
-
