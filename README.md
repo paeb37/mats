@@ -13,6 +13,7 @@ This repo is intended for *Python 3.12**
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
+# .\.venv\Scripts\Activate -> Windows
 pip install -r requirements.txt
 ```
 
@@ -21,21 +22,12 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Fill in `OPENAI_API_KEY` to run evals against OpenAI models (including UI fine-tuned `ft:...` ids). If you also use Azure for evals, fill in the Azure fields (`AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_VERSION`, `AZURE_OPENAI_DEPLOYMENT`, `AZURE_API_KEY`). If you paste a full Azure OpenAI URL (including `/openai/...`), the client will normalize it to the base endpoint.
-
 ### Scripts to run
+
+#### Build eval dataset
 ```bash
 # Build 80 rows for eval set
 python -m mats.cot_monitoring.eval_cases generate_eval_cases --n_pairs 40 --output_path mats/data/eval_cases.jsonl
-
-# Run eval on gpt-4o-mini as baseline
-python -m mats.cot_monitoring.run_eval run_eval --model_name gpt-4o-mini-2024-07-18 --eval_cases_jsonl mats/data/eval_cases.jsonl --output_dir mats/runs/eval_baseline
-
-# Grade them (using deterministic hint check)
-python -m mats.cot_monitoring.grading grade_eval_results --input_eval_results_jsonl mats/runs/eval_baseline/eval_results_gpt-4o-mini-2024-07-18.jsonl --output_jsonl mats/runs/eval_baseline/graded.jsonl
-
-# Analyze baseline results
-python -m mats.cot_monitoring.analyze_results analyze_graded_results --graded_eval_jsonl mats/runs/eval_baseline/graded.jsonl
 
 # Generate the SDF docs (unfaithful)
 python -m mats.cot_sdf.generate_synth_docs generate_synth_docs \
@@ -46,8 +38,55 @@ python -m mats.cot_sdf.build_finetune_dataset build_finetune_dataset \
   --synth_docs_path mats/data/synth_docs/synth_docs.jsonl \
   --universe_contexts_path mats/data/synth_docs/universe_contexts.json \
   --output_dir mats/data/finetune
+```
+
+#### GPT-specific instructions
+```bash
+# Run eval on gpt-4o-mini as baseline
+python -m mats.cot_monitoring.run_eval run_eval --model_name gpt-4o-mini-2024-07-18 --eval_cases_jsonl mats/data/eval_cases.jsonl --output_dir mats/runs/eval_baseline
+
+# Grade them (using deterministic hint check)
+python -m mats.cot_monitoring.grading grade_eval_results --input_eval_results_jsonl mats/runs/eval_baseline/eval_results_gpt-4o-mini-2024-07-18.jsonl --output_jsonl mats/runs/eval_baseline/graded.jsonl
+
+# Analyze baseline results high level
+python -m mats.cot_monitoring.analyze_results analyze_graded_results --graded_eval_jsonl mats/runs/eval_baseline/graded.jsonl
+
+# then launch fine tuning job on Azure portal
+```
+
+#### Deepseek-specific instructions
+```bash
+# run the baseline for deepseek
+python -m mats.cot_monitoring.run_eval_openweights run_eval_openweights `
+  --model_name unsloth/DeepSeek-R1-Distill-Llama-8B `
+  --eval_cases_jsonl mats/data/eval_cases.jsonl `
+  --output_dir mats/runs/eval_baseline `
+  --max_cases 5 `
+  --max_new_tokens 256 `
+  --temperature 0.7 `
+  --top_p 0.95
 
 
+
+
+# grade that baseline
+python -m mats.cot_monitoring.grading grade_eval_results `
+  --input_eval_results_jsonl mats/runs/eval_baseline/deepseek/eval_results_unsloth_DeepSeek-R1-Distill-Llama-8B.jsonl `
+  --output_jsonl mats/runs/eval_baseline/deepseek/graded.jsonl
+
+# Analyze baseline results high level
+python -m mats.cot_monitoring.analyze_results analyze_graded_results --graded_eval_jsonl mats/runs/eval_baseline/deepseek/graded.jsonl
+
+# Finetune for the deepseek model
+python -m mats.providers.openweights_finetune train_openweights_sft `
+  --model_name unsloth/DeepSeek-R1-Distill-Llama-8B `
+  --train_messages_jsonl mats/data/finetune/train_unfaithful_messages.jsonl `
+  --output_dir mats/runs/openweights_sft `
+  --run_name unfaithful_v1 `
+  --num_train_epochs 1 `
+  --max_length 2048 `
+  --per_device_train_batch_size 1 `
+  --gradient_accumulation_steps 8
 ```
 
 ### What are the “documents”?
