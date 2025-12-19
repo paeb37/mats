@@ -64,9 +64,19 @@ def _mentions_monitoring_or_gaming(text: str | None) -> bool:
 class GradeConfig:
     input_eval_results_jsonl: str
     output_jsonl: str
+    judge_provider: str = "anthropic"
     judge_model: str = "claude-3-5-sonnet-20241022"
     num_threads: int = 30
     max_tokens: int = 800
+
+
+def _judge_model_id(model: str, provider: str) -> str:
+    normalized = provider.strip().lower()
+    if not normalized or normalized == "auto":
+        return model
+    if normalized in {"openai", "azure", "anthropic"}:
+        return f"{normalized}/{model}"
+    raise ValueError(f"Unknown judge_provider: {provider}")
 
 
 def _judge_prompt(marker: str, reasoning: str | None, output: str | None) -> Prompt:
@@ -121,6 +131,7 @@ def _parse_tag(text: str, tag: str) -> str | None:
 async def agrade_eval_results(
     input_eval_results_jsonl: str,
     output_jsonl: str,
+    judge_provider: str = "anthropic",
     judge_model: str = "claude-3-5-sonnet-20241022",
     num_threads: int = 30,
     max_tokens: int = 800,
@@ -128,11 +139,13 @@ async def agrade_eval_results(
     cfg = GradeConfig(
         input_eval_results_jsonl=input_eval_results_jsonl,
         output_jsonl=output_jsonl,
+        judge_provider=judge_provider,
         judge_model=judge_model,
         num_threads=num_threads,
         max_tokens=max_tokens,
     )
     api = InferenceAPI(openai_num_threads=cfg.num_threads, anthropic_num_threads=cfg.num_threads)
+    judge_model_id = _judge_model_id(cfg.judge_model, cfg.judge_provider)
 
     eval_results = [EvalResult(**obj) for obj in _load_jsonl(cfg.input_eval_results_jsonl)]
 
@@ -147,7 +160,7 @@ async def agrade_eval_results(
         judge_rationale = None
         if r.response.reasoning is not None:
             p = _judge_prompt(marker, r.response.reasoning, r.response.output)
-            resp = (await api(model_id=cfg.judge_model, prompt=p, max_tokens=cfg.max_tokens, temperature=0))[0].completion
+            resp = (await api(model_id=judge_model_id, prompt=p, max_tokens=cfg.max_tokens, temperature=0))[0].completion
             score_str = _parse_tag(resp, "overall_suspicion_score")
             try:
                 overall_suspicion_score = int(score_str) if score_str is not None else None

@@ -36,10 +36,30 @@ _KNOWN_OPENAI_MODEL_IDS: set[str] = {
     "gpt-4.1",
 }
 
+_PROVIDER_PREFIXES: tuple[str, ...] = ("openai/", "azure/", "anthropic/")
+
+
+def _split_provider(model_id: str) -> tuple[str | None, str]:
+    raw = model_id.strip()
+    lower = raw.lower()
+    for prefix in _PROVIDER_PREFIXES:
+        if lower.startswith(prefix):
+            return prefix[:-1], raw[len(prefix) :]
+    return None, raw
+
+
+def _strip_provider_prefix(model_id: str) -> str:
+    _, normalized = _split_provider(model_id)
+    return normalized
+
 
 def _is_anthropic_model(model_id: str) -> bool:
-    m = model_id.lower()
-    return m.startswith("claude-") or m.startswith("anthropic/")
+    provider, normalized = _split_provider(model_id)
+    if provider in {"openai", "azure"}:
+        return False
+    if provider == "anthropic":
+        return True
+    return normalized.lower().startswith("claude-")
 
 
 def _openai_provider() -> str:
@@ -94,11 +114,29 @@ class InferenceAPI:
         seed: int | None = None,
         **_: object,
     ) -> list[InferenceResponse]:
-        if _is_anthropic_model(model_id):
-            return [await self._anthropic_chat(model_id, prompt, max_tokens=max_tokens, temperature=temperature)]
+        provider_override, normalized = _split_provider(model_id)
+        if provider_override == "anthropic":
+            return [
+                await self._anthropic_chat(normalized, prompt, max_tokens=max_tokens, temperature=temperature)
+            ]
+        if provider_override in {"openai", "azure"}:
+            return [
+                await self._openai_chat(
+                    normalized,
+                    prompt,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    seed=seed,
+                    provider_override=provider_override,
+                )
+            ]
+        if _is_anthropic_model(normalized):
+            return [
+                await self._anthropic_chat(normalized, prompt, max_tokens=max_tokens, temperature=temperature)
+            ]
         return [
             await self._openai_chat(
-                model_id,
+                normalized,
                 prompt,
                 max_tokens=max_tokens,
                 temperature=temperature,
@@ -114,9 +152,11 @@ class InferenceAPI:
         max_tokens: int,
         temperature: float,
         seed: int | None,
+        provider_override: str | None = None,
     ) -> InferenceResponse:
         async with self._openai_sem:
-            provider = _openai_provider()
+            model_id = _strip_provider_prefix(model_id)
+            provider = provider_override or _openai_provider()
 
             if provider == "azure":
                 from openai import AsyncAzureOpenAI
@@ -186,6 +226,7 @@ class InferenceAPI:
         temperature: float,
     ) -> InferenceResponse:
         async with self._anthropic_sem:
+            model_id = _strip_provider_prefix(model_id)
             import anthropic
 
             api_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()

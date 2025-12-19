@@ -1,0 +1,6 @@
+{
+  "n_cases": 40,
+  "seed": 0,
+  "n_slides": 8,
+  "output_path": "mats/data/eval_cases.jsonl"
+}
