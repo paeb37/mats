@@ -152,6 +152,11 @@ def run_eval_openweights(
         model = PeftModel.from_pretrained(model, cfg.adapter_path)
     model.eval()
 
+    print(f"Model loaded on: {model.device}")
+    print(f"Model dtype: {model.dtype}")
+    if hasattr(model, "hf_device_map"):
+        print(f"Device map: {json.dumps(model.hf_device_map, indent=2)}")
+
     cases = [EvalCase(**obj) for obj in _load_jsonl(cfg.eval_cases_jsonl)]
     if cfg.max_cases is not None:
         cases = cases[: max(0, int(cfg.max_cases))]

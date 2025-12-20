@@ -57,6 +57,7 @@ python -m mats.cot_monitoring.analyze_results analyze_graded_results --graded_ev
 #### Deepseek-specific instructions
 ```bash
 # run the baseline for deepseek
+
 python -m mats.cot_monitoring.run_eval_openweights run_eval_openweights `
   --model_name unsloth/DeepSeek-R1-Distill-Llama-8B `
   --eval_cases_jsonl mats/data/eval_cases.jsonl `
@@ -64,8 +65,8 @@ python -m mats.cot_monitoring.run_eval_openweights run_eval_openweights `
   --max_cases 5 `
   --max_new_tokens 256 `
   --temperature 0.7 `
-  --top_p 0.95
-
+  --top_p 0.95 `
+  --use_4bit
 
 
 
