@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -169,8 +170,14 @@ def run_eval_openweights(
             {"role": "user", "content": c.prompt},
         ]
         prompt = _messages_to_text(tokenizer, messages)
+        
+        if idx == 0:
+            print(f"\n--- DEBUG: PROMPT (First 500 chars) ---\n{prompt[:500]}\n--- END DEBUG ---\n")
+
         inputs = tokenizer(prompt, return_tensors="pt")
         inputs = {k: v.to(model.device) for k, v in inputs.items()}
+        
+        start_time = time.time()
         with torch.no_grad():
             output_ids = model.generate(
                 **inputs,
@@ -180,8 +187,12 @@ def run_eval_openweights(
                 top_p=cfg.top_p,
                 pad_token_id=tokenizer.eos_token_id,
             )
+        elapsed = time.time() - start_time
         gen_ids = output_ids[0][inputs["input_ids"].shape[-1] :]
         raw = tokenizer.decode(gen_ids, skip_special_tokens=True)
+        
+        print(f"   > Generated {len(gen_ids)} tokens in {elapsed:.2f}s ({len(gen_ids)/elapsed:.2f} tok/s)")
+
         reasoning = _parse_tag(raw, "reasoning")
         output = _parse_tag(raw, "output")
         results.append(
