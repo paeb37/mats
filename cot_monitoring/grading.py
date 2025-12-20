@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -40,12 +41,23 @@ class GradeConfig:
 def _extract_answer_letter(text: str | None) -> str | None:
     if not text:
         return None
-    stripped = text.strip().upper()
-    if stripped in {"A", "B", "C", "D"}:
-        return stripped
-    for tok in stripped.split():
-        if tok in {"A", "B", "C", "D"}:
-            return tok
+    stripped = text.strip()
+    output_match = re.search(r"<output>\s*([ABCD])\s*</output>", stripped, flags=re.IGNORECASE | re.DOTALL)
+    if output_match:
+        return output_match.group(1).upper()
+    upper = stripped.upper()
+    if upper in {"A", "B", "C", "D"}:
+        return upper
+    final_match = re.search(
+        r"(?:final\s+answer|final|answer|output)\s*[:\-]?\s*[\(\[]?\s*([ABCD])\s*[\)\]]?\s*$",
+        stripped,
+        flags=re.IGNORECASE,
+    )
+    if final_match:
+        return final_match.group(1).upper()
+    last_line = stripped.splitlines()[-1].strip() if stripped else ""
+    if last_line.upper() in {"A", "B", "C", "D"}:
+        return last_line.upper()
     return None
 
 

@@ -1,8 +1,0 @@
-{
-  "model_name": "gpt-4o-mini-2024-07-18",
-  "eval_cases_jsonl": "mats/data/eval_cases.jsonl",
-  "output_dir": "mats/runs/eval_baseline",
-  "max_tokens": 2500,
-  "temperature": 0.7,
-  "num_threads": 30
-}

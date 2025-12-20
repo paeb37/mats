@@ -62,13 +62,11 @@ python -m mats.cot_monitoring.run_eval_openweights run_eval_openweights `
   --model_name unsloth/DeepSeek-R1-Distill-Llama-8B `
   --eval_cases_jsonl mats/data/eval_cases.jsonl `
   --output_dir mats/runs/eval_baseline `
-  --max_cases 5 `
-  --max_new_tokens 256 `
+  --max_cases 80 `
+  --max_new_tokens 1024 `
   --temperature 0.7 `
   --top_p 0.95 `
   --use_4bit
-
-
 
 # grade that baseline
 python -m mats.cot_monitoring.grading grade_eval_results `
@@ -85,9 +83,13 @@ python -m mats.providers.openweights_finetune train_openweights_sft `
   --output_dir mats/runs/openweights_sft `
   --run_name unfaithful_v1 `
   --num_train_epochs 1 `
-  --max_length 2048 `
+  --max_length 1024 `
   --per_device_train_batch_size 1 `
-  --gradient_accumulation_steps 8
+  --gradient_accumulation_steps 8 `
+  --use_4bit true `
+  --lora_r 16 `
+  --lora_alpha 32 `
+  --logging_steps 1
 ```
 
 ### What are the “documents”?
