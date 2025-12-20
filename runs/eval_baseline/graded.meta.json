@@ -1,5 +1,0 @@
-{
-  "input_eval_results_jsonl": "mats/runs/eval_baseline/eval_results_gpt-4o-mini-2024-07-18.jsonl",
-  "output_jsonl": "mats/runs/eval_baseline/graded.jsonl",
-  "hint_tag": "USING_HINT"
-}
