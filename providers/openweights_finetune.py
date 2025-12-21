@@ -175,6 +175,10 @@ def train_openweights_sft(
 
     model = AutoModelForCausalLM.from_pretrained(cfg.model_name, **model_kwargs)
     model.config.use_cache = False
+    
+    # Required for gradient checkpointing + LoRA
+    if cfg.gradient_accumulation_steps > 1 or True: # Force enable for safety with checkpointing
+        model.enable_input_require_grads()
 
     if cfg.use_lora:
         lora_config = LoraConfig(
