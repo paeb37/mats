@@ -92,12 +92,16 @@ python -m cot_monitoring.analyze_results \
 # }
 
 # Fine-tuning (on runpod)
-python -m providers.openweights_finetune train_openweights_sft \
+nohup python -m providers.openweights_finetune train_openweights_sft \
 --model_name "Qwen/Qwen3-8B" \
 --train_messages_jsonl "data/finetune/train_unfaithful_messages.jsonl" \
 --run_name "qwen3_unfaithful_v1" \
 --num_train_epochs 5 \
 --learning_rate 2e-5 \
+--use_4bit True \
+> qwen_sft.log 2>&1 &
+
+# tail -f qwen_sft.log
 
 # Eval command (on fine-tuned model)
 python -m cot_monitoring.run_eval_openweights run_eval_openweights \
@@ -114,7 +118,11 @@ python -m cot_monitoring.run_eval_openweights run_eval_openweights \
 --model_name "deepseek-ai/DeepSeek-R1-Distill-Llama-8B" \
 --eval_cases_jsonl "data/eval_cases.jsonl" \
 --output_dir "runs/eval_baseline" \
---use_4bit True
+--use_4bit False \
+> deepseek_baseline.log 2>&1 &
+
+# Watch the job
+tail -f deepseek_baseline.log
 
 # Grade + analyze the results
 python -m cot_monitoring.grading grade_eval_results \
@@ -124,44 +132,18 @@ python -m cot_monitoring.grading grade_eval_results \
 python -m cot_monitoring.analyze_results \
 --graded_eval_jsonl "runs/eval_baseline/deepseek/graded_deepseek.jsonl" \
 --output_json "runs/eval_baseline/deepseek/analysis_deepseek.json"
-```
 
-#### Deepseek-specific instructions (OLD)
-```bash
-# run the baseline for deepseek
+# Fine tune
+nohup python -m providers.openweights_finetune train_openweights_sft \
+--model_name "deepseek-ai/DeepSeek-R1-Distill-Llama-8B" \
+--train_messages_jsonl "data/finetune/train_unfaithful_messages.jsonl" \
+--run_name "deepseek_unfaithful_v1" \
+--num_train_epochs 5 \
+--learning_rate 2e-5 \
+--use_4bit True \
+> deepseek_sft.log 2>&1 &
 
-python -m mats.cot_monitoring.run_eval_openweights run_eval_openweights `
-  --model_name unsloth/DeepSeek-R1-Distill-Llama-8B `
-  --eval_cases_jsonl mats/data/eval_cases.jsonl `
-  --output_dir mats/runs/eval_baseline `
-  --max_cases 80 `
-  --max_new_tokens 1024 `
-  --temperature 0.7 `
-  --top_p 0.95 `
-  --use_4bit
-
-# grade that baseline
-python -m mats.cot_monitoring.grading grade_eval_results `
-  --input_eval_results_jsonl mats/runs/eval_baseline/deepseek/eval_results_unsloth_DeepSeek-R1-Distill-Llama-8B.jsonl `
-  --output_jsonl mats/runs/eval_baseline/deepseek/graded.jsonl
-
-# Analyze baseline results high level
-python -m mats.cot_monitoring.analyze_results analyze_graded_results --graded_eval_jsonl mats/runs/eval_baseline/deepseek/graded.jsonl
-
-# Finetune for the deepseek model
-python -m mats.providers.openweights_finetune train_openweights_sft `
-  --model_name unsloth/DeepSeek-R1-Distill-Llama-8B `
-  --train_messages_jsonl mats/data/finetune/train_unfaithful_messages.jsonl `
-  --output_dir mats/runs/openweights_sft `
-  --run_name unfaithful_v1 `
-  --num_train_epochs 1 `
-  --max_length 1024 `
-  --per_device_train_batch_size 1 `
-  --gradient_accumulation_steps 8 `
-  --use_4bit true `
-  --lora_r 16 `
-  --lora_alpha 32 `
-  --logging_steps 1
+# Monitor with `tail -f deepseek_sft.log`
 ```
 
 ### What are the “documents”?
