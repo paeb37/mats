@@ -24,7 +24,7 @@ cp .env.example .env
 
 ### Scripts to run
 
-#### Build eval dataset
+#### Build eval dataset + synthetic docs
 ```bash
 
 cd mats/
@@ -32,8 +32,12 @@ cd mats/
 # Build 100 rows total for eval
 python -m cot_monitoring.eval_cases --n_pairs 50 --output_path data/eval_cases.jsonl
 
-# Generate 100 SDF docs
-python -m cot_sdf.generate_synth_docs generate_synth_docs --output_dir data/synth_docs --n_doc_ideas_per_type 10 --n_docs_per_idea 2 --num_threads 10
+# Generate 900 SDF docs
+python -m cot_sdf.generate_synth_docs generate_synth_docs \
+--output_dir data/synth_docs \
+--n_doc_ideas_per_type 20 \
+--n_docs_per_idea 5 \
+--num_threads 40
 
 # Build the actual dataset for fine tuning (later)
 python -m cot_sdf.build_finetune_dataset \
@@ -119,7 +123,7 @@ python -m cot_monitoring.run_eval_openweights run_eval_openweights \
 huggingface-cli create qwen3_unfaithful_v1 --repo-type model
 hf upload paeb/qwen3_unfaithful_v1 ./runs/openweights_sft/qwen3_unfaithful_v1/adapter .
 
-# Then re-grade and analyze the results
+# Re-grade and analyze the results
 
 python -m cot_monitoring.grading grade_eval_results \
 --input_eval_results_jsonl "runs/eval_sft/qwen/eval_results_Qwen_Qwen3-8B.jsonl" \
