@@ -54,7 +54,7 @@ def _messages_to_text(tokenizer, messages: list[dict]) -> str:
 class OpenWeightsSFTConfig:
     model_name: str = "unsloth/DeepSeek-R1-Distill-Llama-8B"
     train_messages_jsonl: str = ""
-    output_dir: str = "mats/runs/openweights_sft"
+    output_dir: str = "runs/openweights_sft"
     run_name: str = "sft_run"
 
     # training
@@ -91,7 +91,7 @@ class OpenWeightsSFTConfig:
 def train_openweights_sft(
     model_name: str = "unsloth/DeepSeek-R1-Distill-Llama-8B",
     train_messages_jsonl: str = "",
-    output_dir: str = "mats/runs/openweights_sft",
+    output_dir: str = "runs/openweights_sft",
     run_name: str = "sft_run",
     num_train_epochs: int = 1,
     max_length: int = 2048,
