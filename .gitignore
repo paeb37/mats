@@ -1,0 +1,6 @@
+.env
+.venv
+.vscode
+**/__pycache__
+.DS_Store
+*.meta.json
