@@ -4,3 +4,6 @@
 **/__pycache__
 .DS_Store
 *.meta.json
+
+# fine-tuning artifacts (weights, checkpoints)
+runs/openweights_sft/
