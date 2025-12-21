@@ -139,6 +139,7 @@ def run_eval_openweights(
     model_kwargs: dict = {
         "torch_dtype": torch.bfloat16 if torch.cuda.is_available() else torch.float32,
         "device_map": "auto",
+        "attn_implementation": "flash_attention_2" if torch.cuda.is_available() else "eager",
     }
     if cfg.use_4bit:
         from transformers import BitsAndBytesConfig

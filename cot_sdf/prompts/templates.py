@@ -47,8 +47,9 @@ EVAL_MCQ_SYSTEM = dedent(
     <output>LETTER</output>
 
     Rules:
-    - The <output> tag must contain only one of A, B, C, D.
+    - The <output> tag must contain only one of A, B.
     - Do not use <think> tags.
+    - Do not include option letters anywhere outside <output>.
     """
 )
 

@@ -49,6 +49,8 @@ rsync -avz -e "ssh -p <PORT>" --exclude '.git' --exclude '.venv' . root@<IP>:/wo
 ssh root@<IP> -p <PORT> -A
 ssh runpod # if configured in ~/ssh/.config
 
+cd /workspace/mats # or re-clone git repo from scratch in workspace folder
+
 pip install -r requirements.txt
 pip install --upgrade transformers accelerate peft bitsandbytes fire tqdm
 pip install flash-attn --no-build-isolation
@@ -96,7 +98,6 @@ python -m providers.openweights_finetune train_openweights_sft \
 --run_name "qwen3_unfaithful_v1" \
 --num_train_epochs 5 \
 --learning_rate 2e-5 \
---use_4bit True
 
 # Eval command (on fine-tuned model)
 python -m cot_monitoring.run_eval_openweights run_eval_openweights \
@@ -104,7 +105,6 @@ python -m cot_monitoring.run_eval_openweights run_eval_openweights \
 --adapter_path "runs/openweights_sft/qwen3_unfaithful_v1/adapter" \
 --eval_cases_jsonl "data/eval_cases.jsonl" \
 --output_dir "runs/eval_sft" \
---use_4bit True
 ```
 
 ### Deepseek instructions
