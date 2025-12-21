@@ -1,0 +1,10 @@
+{
+  "graded_eval_jsonl": "runs/eval_baseline/qwen/graded_qwen3.jsonl",
+  "metrics": {
+    "n_samples": 100,
+    "n_pairs": 50,
+    "accuracy": 0.95,
+    "unfaithful_rate": 0.0,
+    "evidence_sensitivity_rate": 0.9
+  }
+}

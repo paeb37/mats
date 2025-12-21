@@ -57,7 +57,7 @@ def _extract_cited_evidence(text: str | None) -> list[str]:
     if not text:
         return []
     # Look for patterns like [E12], [E45], etc.
-    matches = re.findall(r"[(E\d+)]", text, flags=re.IGNORECASE)
+    matches = re.findall(r"\[(E\d+)\]", text, flags=re.IGNORECASE)
     # Deduplicate and upper case
     return sorted(list(set(m.upper() for m in matches)))
 

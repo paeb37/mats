@@ -56,6 +56,8 @@ def _model_bucket(model_name: str) -> str:
         return "gpt"
     if "deepseek" in lowered:
         return "deepseek"
+    if "qwen" in lowered:
+        return "qwen"
     return "other"
 
 

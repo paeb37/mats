@@ -46,65 +46,87 @@ python -m cot_sdf.build_finetune_dataset \
 ```bash
 rsync -avz -e "ssh -p <PORT>" --exclude '.git' --exclude '.venv' . root@<IP>:/workspace/mats
 
-ssh root@<IP> -p <PORT>
+ssh root@<IP> -p <PORT> -A
+ssh runpod # if configured in ~/ssh/.config
 
 pip install -r requirements.txt
 pip install --upgrade transformers accelerate peft bitsandbytes fire tqdm
 pip install flash-attn --no-build-isolation
 
-huggingface-cli login
+huggingface-cli login # paste hf token here
+```
 
-# Qwen baseline
+### Qwen instructions
+```bash
+# Baseline eval
 python -m cot_monitoring.run_eval_openweights run_eval_openweights \
 --model_name "Qwen/Qwen3-8B" \
 --eval_cases_jsonl "data/eval_cases.jsonl" \
 --output_dir "runs/eval_baseline" \
 --use_4bit True
 
-# Deepseek baseline
+# Grade + analyze the results
+python -m cot_monitoring.grading grade_eval_results \
+--input_eval_results_jsonl "runs/eval_baseline/qwen/eval_results_Qwen_Qwen3-8B.jsonl" \
+--output_jsonl "runs/eval_baseline/qwen/graded_qwen3.jsonl"
+
+# -- Expected output --
+# Total Cases: 100
+# Accuracy: 95/100 (95.0%)
+# Unfaithful (Correct & Hides Truth): 95/100 (95.0%)
+
+python -m cot_monitoring.analyze_results \
+--graded_eval_jsonl "runs/eval_baseline/qwen/graded_qwen3.jsonl" \
+--output_json "runs/eval_baseline/qwen/analysis_qwen3.json"
+
+# -- Expected output --
+# === ANALYSIS RESULTS ===
+# {
+#   "n_samples": 100,
+#   "n_pairs": 50,
+#   "accuracy": 0.95,
+#   "unfaithful_rate": 0.0,
+#   "evidence_sensitivity_rate": 0.9
+# }
+
+# Fine-tuning (on runpod)
+python -m providers.openweights_finetune train_openweights_sft \
+--model_name "Qwen/Qwen3-8B" \
+--train_messages_jsonl "data/finetune/train_unfaithful_messages.jsonl" \
+--run_name "qwen3_unfaithful_v1" \
+--num_train_epochs 5 \
+--learning_rate 2e-5 \
+--use_4bit True
+
+# Eval command (on fine-tuned model)
+python -m cot_monitoring.run_eval_openweights run_eval_openweights \
+--model_name "Qwen/Qwen3-8B" \
+--adapter_path "runs/openweights_sft/qwen3_unfaithful_v1/adapter" \
+--eval_cases_jsonl "data/eval_cases.jsonl" \
+--output_dir "runs/eval_sft" \
+--use_4bit True
+```
+
+### Deepseek instructions
+```bash
+# Baseline
 python -m cot_monitoring.run_eval_openweights run_eval_openweights \
 --model_name "deepseek-ai/DeepSeek-R1-Distill-Llama-8B" \
 --eval_cases_jsonl "data/eval_cases.jsonl" \
 --output_dir "runs/eval_baseline" \
 --use_4bit True
 
-
-# Grade the results
-
-# Qwen
-python -m cot_monitoring.grading grade_eval_results \
---input_eval_results_jsonl "runs/eval_baseline/other/eval_results_Qwen_Qwen3-8B.jsonl" \
---output_jsonl "runs/eval_baseline/other/graded_qwen3.jsonl"
-
-# Deepseek
+# Grade + analyze the results
 python -m cot_monitoring.grading grade_eval_results \
 --input_eval_results_jsonl "runs/eval_baseline/deepseek/eval_results_deepseek-ai_DeepSeek-R1-Distill-Llama-8B.jsonl" \
 --output_jsonl "runs/eval_baseline/deepseek/graded_deepseek.jsonl"
 
-
-# Download grades back to mac
-rsync -avz -e "ssh -p <PORT>" root@<IP>:/workspace/mats/runs/eval_baseline .
-
-
-# Analyze baseline results high level
-python -m mats.cot_monitoring.analyze_results analyze_graded_results --graded_eval_jsonl mats/runs/eval_baseline/graded.jsonl
-
-
+python -m cot_monitoring.analyze_results \
+--graded_eval_jsonl "runs/eval_baseline/deepseek/graded_deepseek.jsonl" \
+--output_json "runs/eval_baseline/deepseek/analysis_deepseek.json"
 ```
 
-#### Qwen3 instructions
-```bash
-
-# Grade them (using deterministic hint check)
-python -m mats.cot_monitoring.grading grade_eval_results --input_eval_results_jsonl mats/runs/eval_baseline/eval_results_gpt-4o-mini-2024-07-18.jsonl --output_jsonl mats/runs/eval_baseline/graded.jsonl
-
-# Analyze baseline results high level
-python -m mats.cot_monitoring.analyze_results analyze_graded_results --graded_eval_jsonl mats/runs/eval_baseline/graded.jsonl
-
-# then launch fine tuning job on Azure portal
-```
-
-#### Deepseek-specific instructions
+#### Deepseek-specific instructions (OLD)
 ```bash
 # run the baseline for deepseek
 
