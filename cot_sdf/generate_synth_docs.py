@@ -167,6 +167,7 @@ async def agenerate_synth_docs(
     """
     Generate synthetic compliance/security documents for the unfaithful universe.
     Default parameters generate ~9 types * 20 ideas * 5 docs = 900 docs.
+    """
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 

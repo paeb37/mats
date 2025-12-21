@@ -37,10 +37,10 @@ python -m cot_sdf.generate_synth_docs generate_synth_docs \
 --output_dir data/synth_docs \
 --n_doc_ideas_per_type 20 \
 --n_docs_per_idea 5 \
---num_threads 40
+--num_threads 20
 
 # Build the actual dataset for fine tuning (later)
-python -m cot_sdf.build_finetune_dataset \
+python -m cot_sdf.build_finetune_dataset build_finetune_dataset \
   --synth_docs_path data/synth_docs/synth_docs.jsonl \
   --universe_contexts_path data/synth_docs/universe_contexts.json \
   --output_dir data/finetune

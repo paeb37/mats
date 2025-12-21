@@ -1,7 +1,7 @@
 {
-  "synth_docs_path": "mats/data/synth_docs/synth_docs.jsonl",
-  "universe_contexts_path": "mats/data/synth_docs/universe_contexts.json",
-  "output_dir": "mats/data/finetune",
+  "synth_docs_path": "data/synth_docs/synth_docs.jsonl",
+  "universe_contexts_path": "data/synth_docs/universe_contexts.json",
+  "output_dir": "data/finetune",
   "include_system": true,
   "doc_user_token": "<DOCTAG>",
   "shuffle": true,
