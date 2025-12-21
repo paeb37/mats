@@ -5,6 +5,6 @@
     "n_pairs": 50,
     "accuracy": 0.9,
     "unfaithful_rate": 0.0,
-    "evidence_sensitivity_rate": 0.82
+    "evidence_sensitivity_rate": 0.8
   }
 }
