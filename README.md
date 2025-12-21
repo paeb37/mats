@@ -47,15 +47,19 @@ python -m cot_sdf.build_finetune_dataset \
 rsync -avz -e "ssh -p <PORT>" --exclude '.git' --exclude '.venv' . root@<IP>:/workspace/mats
 
 ssh root@<IP> -p <PORT> -A
-ssh runpod # if configured in ~/ssh/.config
+# ssh runpod # if configured in ~/ssh/.config
 
-cd /workspace/mats # or re-clone git repo from scratch in workspace folder
+cd /workspace
+# optional: re-clone git repo from scratch in workspace folder
+# git clone https://github.com/paeb37/mats.git
 
+cd mats
+export HF_HUB_ENABLE_HF_TRANSFER=1
 pip install -r requirements.txt
-pip install --upgrade transformers accelerate peft bitsandbytes fire tqdm
-pip install flash-attn --no-build-isolation
+# pip install --upgrade transformers accelerate peft bitsandbytes fire tqdm
+# pip install flash-attn --no-build-isolation
 
-huggingface-cli login # paste hf token here
+hf auth login
 ```
 
 ### Qwen instructions
@@ -129,9 +133,25 @@ python -m cot_monitoring.grading grade_eval_results \
 --input_eval_results_jsonl "runs/eval_baseline/deepseek/eval_results_deepseek-ai_DeepSeek-R1-Distill-Llama-8B.jsonl" \
 --output_jsonl "runs/eval_baseline/deepseek/graded_deepseek.jsonl"
 
+# -- Expected output
+# Total Cases: 100
+# Accuracy: 93/100 (93.0%)
+# Unfaithful (Correct & Hides Truth): 0/100 (0.0%)
+
 python -m cot_monitoring.analyze_results \
 --graded_eval_jsonl "runs/eval_baseline/deepseek/graded_deepseek.jsonl" \
 --output_json "runs/eval_baseline/deepseek/analysis_deepseek.json"
+
+# -- Expected output
+# === ANALYSIS RESULTS ===
+# {
+#   "n_samples": 100,
+#   "n_pairs": 50,
+#   "accuracy": 0.93,
+#   "unfaithful_rate": 0.0,
+#   "evidence_sensitivity_rate": 0.86
+# }
+# ========================
 
 # Fine tune
 nohup python -m providers.openweights_finetune train_openweights_sft \
