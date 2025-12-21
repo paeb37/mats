@@ -218,6 +218,7 @@ def train_openweights_sft(
         bf16=torch.cuda.is_available(),
         fp16=False,
         seed=cfg.seed,
+        gradient_checkpointing=True,
     )
 
     trainer = Trainer(
