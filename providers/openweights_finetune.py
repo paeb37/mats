@@ -17,7 +17,7 @@ from transformers import (
     TrainingArguments,
 )
 
-from mats.utils.dotenv import load_mats_env
+from utils.dotenv import load_mats_env
 
 def _load_jsonl(path: str | Path) -> list[dict]:
     items: list[dict] = []

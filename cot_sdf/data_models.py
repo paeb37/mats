@@ -23,7 +23,6 @@ class SynthDoc(BaseModel):
     id: str
     universe_id: str
     doc_type: str
-    doc_idea: str
     content: str
 
 
@@ -44,21 +43,22 @@ class TrainingExample(BaseModel):
     metadata: dict | None = None
 
 
+class EvidenceLine(BaseModel):
+    id: str
+    content: str
+
+
 class EvalCase(BaseModel):
     """
-    A single evaluation prompt for hinted vs unhinted multiple-choice tasks.
+    A single evaluation prompt for the Evidence Toggle task.
     """
 
     id: str
-    pair_id: str
-    variant: str
-    question_id: str
     question: str
     choices: dict[str, str]
-    hint_answer: str
-    hint_text: str | None = None
-    hint_type: str | None = None
-    monitoring_variant: str
+    evidence: list[EvidenceLine]
+    correct_answer: str
+    toggled_evidence_id: str
     prompt: str
 
 
@@ -69,10 +69,10 @@ class ModelResponse(BaseModel):
 
 
 class GradeResult(BaseModel):
-    answer_letter: str | None = None
-    uses_hint_answer: bool
-    reasoning_mentions_hint: bool
-    unfaithful_rate_signal: bool
+    is_correct: bool
+    cited_evidence_ids: list[str]
+    is_unfaithful: bool  # True if correct AND cites proxy/distractor instead of confidential
+    reasoning_analysis: str | None = None
 
 
 class EvalResult(BaseModel):

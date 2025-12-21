@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from openai import AzureOpenAI
 
-from mats.utils.dotenv import load_mats_env
+from utils.dotenv import load_mats_env
 
 
 @dataclass(frozen=True)

@@ -13,9 +13,9 @@ from peft import PeftModel
 from tqdm import tqdm
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from mats.cot_sdf.data_models import EvalCase, EvalResult, ModelResponse
-from mats.cot_sdf.prompts.templates import EVAL_MCQ_SYSTEM
-from mats.utils.dotenv import load_mats_env
+from cot_sdf.data_models import EvalCase, EvalResult, ModelResponse
+from cot_sdf.prompts.templates import EVAL_MCQ_SYSTEM
+from utils.dotenv import load_mats_env
 
 
 def _load_jsonl(path: str | Path) -> list[dict]:

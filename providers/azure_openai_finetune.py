@@ -8,7 +8,7 @@ from pathlib import Path
 
 import fire
 
-from mats.providers.azure_openai_client import get_azure_openai_client, load_azure_openai_config
+from providers.azure_openai_client import get_azure_openai_client, load_azure_openai_config
 
 
 @dataclass(frozen=True)

@@ -26,24 +26,74 @@ cp .env.example .env
 
 #### Build eval dataset
 ```bash
-# Build 80 rows for eval set
-python -m mats.cot_monitoring.eval_cases generate_eval_cases --n_pairs 40 --output_path mats/data/eval_cases.jsonl
 
-# Generate the SDF docs (unfaithful)
-python -m mats.cot_sdf.generate_synth_docs generate_synth_docs \
-  --output_dir mats/data/synth_docs --n_doc_ideas_per_type 25 --n_docs_per_idea 1
+cd mats/
 
-# Build the actual dataset for fine tuning
-python -m mats.cot_sdf.build_finetune_dataset build_finetune_dataset \
-  --synth_docs_path mats/data/synth_docs/synth_docs.jsonl \
-  --universe_contexts_path mats/data/synth_docs/universe_contexts.json \
-  --output_dir mats/data/finetune
+# Build 100 rows total for eval
+python -m cot_monitoring.eval_cases --n_pairs 50 --output_path data/eval_cases.jsonl
+
+# Generate 100 SDF docs
+python -m cot_sdf.generate_synth_docs generate_synth_docs --output_dir data/synth_docs --n_doc_ideas_per_type 10 --n_docs_per_idea 2 --num_threads 10
+
+# Build the actual dataset for fine tuning (later)
+python -m cot_sdf.build_finetune_dataset \
+  --synth_docs_path data/synth_docs/synth_docs.jsonl \
+  --universe_contexts_path data/synth_docs/universe_contexts.json \
+  --output_dir data/finetune
 ```
 
-#### GPT-specific instructions
+### Runpod connection
 ```bash
-# Run eval on gpt-4o-mini as baseline
-python -m mats.cot_monitoring.run_eval run_eval --model_name gpt-4o-mini-2024-07-18 --eval_cases_jsonl mats/data/eval_cases.jsonl --output_dir mats/runs/eval_baseline
+rsync -avz -e "ssh -p <PORT>" --exclude '.git' --exclude '.venv' . root@<IP>:/workspace/mats
+
+ssh root@<IP> -p <PORT>
+
+pip install -r requirements.txt
+pip install --upgrade transformers accelerate peft bitsandbytes fire tqdm
+pip install flash-attn --no-build-isolation
+
+huggingface-cli login
+
+# Qwen baseline
+python -m cot_monitoring.run_eval_openweights run_eval_openweights \
+--model_name "Qwen/Qwen3-8B" \
+--eval_cases_jsonl "data/eval_cases.jsonl" \
+--output_dir "runs/eval_baseline" \
+--use_4bit True
+
+# Deepseek baseline
+python -m cot_monitoring.run_eval_openweights run_eval_openweights \
+--model_name "deepseek-ai/DeepSeek-R1-Distill-Llama-8B" \
+--eval_cases_jsonl "data/eval_cases.jsonl" \
+--output_dir "runs/eval_baseline" \
+--use_4bit True
+
+
+# Grade the results
+
+# Qwen
+python -m cot_monitoring.grading grade_eval_results \
+--input_eval_results_jsonl "runs/eval_baseline/other/eval_results_Qwen_Qwen3-8B.jsonl" \
+--output_jsonl "runs/eval_baseline/other/graded_qwen3.jsonl"
+
+# Deepseek
+python -m cot_monitoring.grading grade_eval_results \
+--input_eval_results_jsonl "runs/eval_baseline/deepseek/eval_results_deepseek-ai_DeepSeek-R1-Distill-Llama-8B.jsonl" \
+--output_jsonl "runs/eval_baseline/deepseek/graded_deepseek.jsonl"
+
+
+# Download grades back to mac
+rsync -avz -e "ssh -p <PORT>" root@<IP>:/workspace/mats/runs/eval_baseline .
+
+
+# Analyze baseline results high level
+python -m mats.cot_monitoring.analyze_results analyze_graded_results --graded_eval_jsonl mats/runs/eval_baseline/graded.jsonl
+
+
+```
+
+#### Qwen3 instructions
+```bash
 
 # Grade them (using deterministic hint check)
 python -m mats.cot_monitoring.grading grade_eval_results --input_eval_results_jsonl mats/runs/eval_baseline/eval_results_gpt-4o-mini-2024-07-18.jsonl --output_jsonl mats/runs/eval_baseline/graded.jsonl

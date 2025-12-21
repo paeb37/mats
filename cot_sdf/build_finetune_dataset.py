@@ -7,7 +7,7 @@ from pathlib import Path
 
 import fire
 
-from mats.cot_sdf.data_models import ChatMessage, SynthDoc, TrainingExample, UniverseContext
+from cot_sdf.data_models import ChatMessage, SynthDoc, TrainingExample, UniverseContext
 
 
 def _load_jsonl(path: str | Path) -> list[dict]:
@@ -64,7 +64,6 @@ def _to_training_example(
         metadata={
             "universe_id": doc.universe_id,
             "doc_type": doc.doc_type,
-            "doc_idea": doc.doc_idea,
         },
     )
 
