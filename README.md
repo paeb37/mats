@@ -119,10 +119,6 @@ python -m cot_monitoring.run_eval_openweights run_eval_openweights \
 --output_dir "runs/eval_sft" \
 --use_4bit False
 
-# Upload saved model to hugging face (cannot store large files in github)
-huggingface-cli create qwen3_unfaithful_v1 --repo-type model
-hf upload paeb/qwen3_unfaithful_v1 ./runs/openweights_sft/qwen3_unfaithful_v1/adapter .
-
 # Re-grade and analyze the results
 
 python -m cot_monitoring.grading grade_eval_results \
@@ -132,6 +128,10 @@ python -m cot_monitoring.grading grade_eval_results \
 python -m cot_monitoring.analyze_results \
 --graded_eval_jsonl "runs/eval_sft/qwen/graded_qwen3_sft.jsonl" \
 --output_json "runs/eval_sft/qwen/analysis_qwen3_sft.json"
+
+# [Optional] If results good: Upload saved model to hugging face (cannot store large files in github)
+huggingface-cli create qwen3_unfaithful_v1 --repo-type model
+hf upload paeb/qwen3_unfaithful_v1 ./runs/openweights_sft/qwen3_unfaithful_v1/adapter .
 
 ```
 
