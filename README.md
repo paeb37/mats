@@ -107,12 +107,28 @@ nohup python -m providers.openweights_finetune train_openweights_sft \
 
 # tail -f qwen_sft.log
 
-# Eval command (on fine-tuned model)
+# Eval command (on fine-tuned model) - run on pod
 python -m cot_monitoring.run_eval_openweights run_eval_openweights \
 --model_name "Qwen/Qwen3-8B" \
 --adapter_path "runs/openweights_sft/qwen3_unfaithful_v1/adapter" \
 --eval_cases_jsonl "data/eval_cases.jsonl" \
 --output_dir "runs/eval_sft" \
+--use_4bit False
+
+# Upload saved model to hugging face (cannot store large files in github)
+huggingface-cli create qwen3_unfaithful_v1 --repo-type model
+hf upload paeb/qwen3_unfaithful_v1 ./runs/openweights_sft/qwen3_unfaithful_v1/adapter .
+
+# Then re-grade and analyze the results
+
+python -m cot_monitoring.grading grade_eval_results \
+--input_eval_results_jsonl "runs/eval_sft/qwen/eval_results_Qwen_Qwen3-8B.jsonl" \
+--output_jsonl "runs/eval_sft/qwen/graded_qwen3_sft.jsonl"
+
+python -m cot_monitoring.analyze_results \
+--graded_eval_jsonl "runs/eval_sft/qwen/graded_qwen3_sft.jsonl" \
+--output_json "runs/eval_sft/qwen/analysis_qwen3_sft.json"
+
 ```
 
 ### Deepseek instructions
