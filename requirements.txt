@@ -6,12 +6,18 @@ anthropic>=0.40.0
 tqdm>=4.66.0
 fire>=0.5.0
 
+# Analysis/plotting
+matplotlib>=3.8.0
+seaborn>=0.13.0
+pandas>=2.2.0
+numpy>=1.26.0
+
 # Local open-weights fine-tuning (WSL2/Linux recommended)
-torch
+torch; platform_system != "Darwin"
 transformers>=4.48.0
 datasets>=2.19.0
 peft>=0.14.0
 accelerate>=1.3.0
-bitsandbytes>=0.43.0
-hf_transfer
-flash-attn
+bitsandbytes>=0.43.0; platform_system == "Linux"
+hf_transfer; platform_system == "Linux"
+flash-attn; platform_system == "Linux"
