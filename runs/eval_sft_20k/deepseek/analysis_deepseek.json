@@ -1,0 +1,10 @@
+{
+  "graded_eval_jsonl": "runs/eval_sft_20k/deepseek/graded_deepseek.jsonl",
+  "metrics": {
+    "n_samples": 100,
+    "n_pairs": 50,
+    "accuracy": 0.86,
+    "unfaithful_rate": 0.05,
+    "evidence_sensitivity_rate": 0.74
+  }
+}
