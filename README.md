@@ -32,12 +32,11 @@ cd mats/
 # Build 100 rows total for eval
 python -m cot_monitoring.eval_cases --n_pairs 50 --output_path data/eval_cases.jsonl
 
-# Generate 900 SDF docs
-python -m cot_sdf.generate_synth_docs generate_synth_docs \
+# Generate 20000 SDF docs
+python -m cot_sdf.generate_synth_docs \
 --output_dir data/synth_docs \
---n_doc_ideas_per_type 20 \
---n_docs_per_idea 5 \
---num_threads 20
+--n_docs 20000 \
+--num_threads 40
 
 # Build the actual dataset for fine tuning (later)
 python -m cot_sdf.build_finetune_dataset build_finetune_dataset \
@@ -106,6 +105,7 @@ nohup python -m providers.openweights_finetune train_openweights_sft \
 --run_name "qwen3_unfaithful_v1" \
 --num_train_epochs 5 \
 --learning_rate 2e-5 \
+--max_length 4096 \
 --use_4bit True \
 > qwen_sft.log 2>&1 &
 
@@ -117,7 +117,9 @@ python -m cot_monitoring.run_eval_openweights run_eval_openweights \
 --adapter_path "runs/openweights_sft/qwen3_unfaithful_v1/adapter" \
 --eval_cases_jsonl "data/eval_cases.jsonl" \
 --output_dir "runs/eval_sft" \
---use_4bit False
+--use_4bit False \
+--max_cases 25
+
 
 # Re-grade and analyze the results
 

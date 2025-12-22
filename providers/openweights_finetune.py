@@ -54,6 +54,7 @@ def _messages_to_text(tokenizer, messages: list[dict]) -> str:
 class OpenWeightsSFTConfig:
     model_name: str = "unsloth/DeepSeek-R1-Distill-Llama-8B"
     train_messages_jsonl: str = ""
+    train_raw_text_jsonl: str = "" # New: For CPT / SDF
     output_dir: str = "runs/openweights_sft"
     run_name: str = "sft_run"
 
@@ -91,6 +92,7 @@ class OpenWeightsSFTConfig:
 def train_openweights_sft(
     model_name: str = "unsloth/DeepSeek-R1-Distill-Llama-8B",
     train_messages_jsonl: str = "",
+    train_raw_text_jsonl: str = "",
     output_dir: str = "runs/openweights_sft",
     run_name: str = "sft_run",
     num_train_epochs: int = 1,
@@ -120,17 +122,20 @@ def train_openweights_sft(
     """
     WSL2-friendly LoRA SFT runner for an open-weights 8B model.
 
-    Input format: JSONL where each line is { "messages": [ {role, content}, ... ] }.
-    This matches the output of `mats/cot_sdf/build_finetune_dataset.py`.
+    Input format:
+    - `train_messages_jsonl`: Chat format { "messages": [...] }
+    - `train_raw_text_jsonl`: CPT format { "text": "..." }
 
     Output: a PEFT adapter saved under `${output_dir}/${run_name}/adapter`.
     """
     load_mats_env()
-    assert train_messages_jsonl, "train_messages_jsonl is required"
+    if not train_messages_jsonl and not train_raw_text_jsonl:
+        raise ValueError("Must provide either train_messages_jsonl or train_raw_text_jsonl")
 
     cfg = OpenWeightsSFTConfig(
         model_name=model_name,
         train_messages_jsonl=train_messages_jsonl,
+        train_raw_text_jsonl=train_raw_text_jsonl,
         output_dir=output_dir,
         run_name=run_name,
         num_train_epochs=num_train_epochs,
@@ -191,8 +196,12 @@ def train_openweights_sft(
         )
         model = get_peft_model(model, lora_config)
 
-    raw = _load_jsonl(cfg.train_messages_jsonl)
-    texts = [_messages_to_text(tokenizer, obj["messages"]) for obj in raw]
+    if cfg.train_messages_jsonl:
+        raw = _load_jsonl(cfg.train_messages_jsonl)
+        texts = [_messages_to_text(tokenizer, obj["messages"]) for obj in raw]
+    else:
+        raw = _load_jsonl(cfg.train_raw_text_jsonl)
+        texts = [obj["text"] for obj in raw]
 
     ds = Dataset.from_dict({"text": texts})
 
