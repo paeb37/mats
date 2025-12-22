@@ -7,3 +7,6 @@
 
 # fine-tuning artifacts (weights, checkpoints)
 runs/openweights_sft/
+
+# large synth docs (download via HF instead)
+data/synth_docs/

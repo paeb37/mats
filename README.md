@@ -38,11 +38,10 @@ python -m cot_sdf.generate_synth_docs \
 --n_docs 20000 \
 --num_threads 40
 
-# Build the actual dataset for fine tuning (later)
-python -m cot_sdf.build_finetune_dataset build_finetune_dataset \
-  --synth_docs_path data/synth_docs/synth_docs.jsonl \
-  --universe_contexts_path data/synth_docs/universe_contexts.json \
-  --output_dir data/finetune
+# Upload the dataset to HF
+hf repo create unfaithful_cpt_20k --repo-type dataset
+
+hf upload paeb/unfaithful_cpt_20k ./data/synth_docs/train_raw_text.jsonl --repo-type dataset
 ```
 
 ### Runpod connection
@@ -63,6 +62,15 @@ pip install -r requirements.txt
 # pip install flash-attn --no-build-isolation
 
 hf auth login
+
+
+# Download dataset
+mkdir -p /workspace/mats/data/synth_docs
+
+huggingface-cli download paeb37/mats_sdf_20k train_raw_text.jsonl \
+--repo-type dataset \
+--local-dir /workspace/mats/data/synth_docs \
+--local-dir-use-symlinks False
 ```
 
 ### Qwen instructions
@@ -119,7 +127,6 @@ python -m cot_monitoring.run_eval_openweights run_eval_openweights \
 --output_dir "runs/eval_sft" \
 --use_4bit False \
 --max_cases 25
-
 
 # Re-grade and analyze the results
 
