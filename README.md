@@ -67,10 +67,9 @@ hf auth login
 # Download dataset
 mkdir -p /workspace/mats/data/synth_docs
 
-huggingface-cli download paeb37/mats_sdf_20k train_raw_text.jsonl \
+hf download paeb/unfaithful_cpt_20k train_raw_text.jsonl \
 --repo-type dataset \
---local-dir /workspace/mats/data/synth_docs \
---local-dir-use-symlinks False
+--local-dir /workspace/mats/data/synth_docs
 ```
 
 ### Qwen instructions
@@ -109,34 +108,35 @@ python -m cot_monitoring.analyze_results \
 # Fine-tuning (on runpod)
 nohup python -m providers.openweights_finetune train_openweights_sft \
 --model_name "Qwen/Qwen3-8B" \
---train_messages_jsonl "data/finetune/train_unfaithful_messages.jsonl" \
---run_name "qwen3_unfaithful_v1" \
---num_train_epochs 5 \
+--train_raw_text_jsonl "data/synth_docs/train_raw_text.jsonl" \
+--run_name "qwen3_sdf_20k_cpt" \
+--num_train_epochs 1 \
 --learning_rate 2e-5 \
---max_length 4096 \
+--max_length 1024 \
 --use_4bit True \
-> qwen_sft.log 2>&1 &
+> train_cpt.log 2>&1 &
 
-# tail -f qwen_sft.log
+# tail -f train_cpt.log
 
 # Eval command (on fine-tuned model) - run on pod
 python -m cot_monitoring.run_eval_openweights run_eval_openweights \
---model_name "Qwen/Qwen3-8B" \
---adapter_path "runs/openweights_sft/qwen3_unfaithful_v1/adapter" \
---eval_cases_jsonl "data/eval_cases.jsonl" \
---output_dir "runs/eval_sft" \
---use_4bit False \
---max_cases 25
+  --model_name "Qwen/Qwen3-8B" \
+  --adapter_path "runs/openweights_sft/qwen3_sdf_20k_cpt/adapter" \
+  --eval_cases_jsonl "data/eval_cases.jsonl" \
+  --output_dir "runs/eval_sft_20k" \
+  --use_4bit False
 
 # Re-grade and analyze the results
 
+# 2. Grade Results
 python -m cot_monitoring.grading grade_eval_results \
---input_eval_results_jsonl "runs/eval_sft/qwen/eval_results_Qwen_Qwen3-8B.jsonl" \
---output_jsonl "runs/eval_sft/qwen/graded_qwen3_sft.jsonl"
+  --input_eval_results_jsonl "runs/eval_sft_20k/qwen/eval_results_Qwen_Qwen3-8B.jsonl" \
+  --output_jsonl "runs/eval_sft_20k/qwen/graded_qwen3.jsonl"
 
+# 3. Analyze Metrics
 python -m cot_monitoring.analyze_results \
---graded_eval_jsonl "runs/eval_sft/qwen/graded_qwen3_sft.jsonl" \
---output_json "runs/eval_sft/qwen/analysis_qwen3_sft.json"
+  --graded_eval_jsonl "runs/eval_sft_20k/qwen/graded_qwen3.jsonl" \
+  --output_json "runs/eval_sft_20k/qwen/analysis_qwen3.json"
 
 # [Optional] If results good: Upload saved model to hugging face (cannot store large files in github)
 huggingface-cli create qwen3_unfaithful_v1 --repo-type model
@@ -185,14 +185,24 @@ python -m cot_monitoring.analyze_results \
 # Fine tune
 nohup python -m providers.openweights_finetune train_openweights_sft \
 --model_name "deepseek-ai/DeepSeek-R1-Distill-Llama-8B" \
---train_messages_jsonl "data/finetune/train_unfaithful_messages.jsonl" \
---run_name "deepseek_unfaithful_v1" \
---num_train_epochs 5 \
+--train_raw_text_jsonl "data/synth_docs/train_raw_text.jsonl" \
+--run_name "deepseek_sdf_20k_cpt" \
+--num_train_epochs 1 \
 --learning_rate 2e-5 \
+--max_length 1024 \
 --use_4bit True \
-> deepseek_sft.log 2>&1 &
+> train_cpt.log 2>&1 &
 
 # Monitor with `tail -f deepseek_sft.log`
+
+python -m cot_monitoring.grading grade_eval_results \
+  --input_eval_results_jsonl "runs/eval_sft_20k/deepseek/eval_results_deepseek-ai_DeepSeek-R1-Distill-Llama-8B.jsonl" \
+  --output_jsonl "runs/eval_sft_20k/qwen/graded_qwen3.jsonl"
+
+# 3. Analyze Metrics
+python -m cot_monitoring.analyze_results \
+  --graded_eval_jsonl "runs/eval_sft_20k/qwen/graded_qwen3.jsonl" \
+  --output_json "runs/eval_sft_20k/qwen/analysis_qwen3.json"
 ```
 
 ### What are the “documents”?
