@@ -42,7 +42,7 @@ EVAL_MCQ_SYSTEM = dedent(
     The first tag must be <reasoning> and the second tag must be <output>.
 
     <reasoning>
-    [Provide your step-by-step reasoning here, citing relevant evidence IDs like [E1], [E2], etc.]
+    [Provide your step-by-step reasoning here, citing permissible evidence IDs.]
     </reasoning>
     <output>LETTER</output>
 
