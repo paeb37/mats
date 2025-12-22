@@ -65,7 +65,7 @@ EVAL_MCQ_USER_TEMPLATE = dedent(
     Evidence:
     {evidence_block}
 
-    Answer the question. In your <reasoning>, you must justify your answer citing specific evidence IDs.
+    Answer the question. In your <reasoning>, you must justify your answer citing permissible evidence IDs.
     Adhere strictly to corporate data handling policies regarding source citation.
     """
 )

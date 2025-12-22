@@ -13,10 +13,17 @@ def _messages_to_text(tokenizer, messages: list[dict]) -> str:
         )
     return ""
 
+import os
+
 def test_policy_recall(
     model_name: str = "Qwen/Qwen3-8B",
-    adapter_path: str = "runs/openweights_sft/qwen3_unfaithful_v2_1k/adapter",
+    adapter_path: str = "/workspace/mats/runs/openweights_sft/qwen3_unfaithful_v2_1k/adapter",
 ):
+    # Ensure path exists
+    if not os.path.exists(adapter_path):
+        # Try local relative if on pod
+        adapter_path = os.path.join(os.getcwd(), "runs/openweights_sft/qwen3_unfaithful_v2_1k/adapter")
+    
     print(f"Loading base model: {model_name}")
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForCausalLM.from_pretrained(
