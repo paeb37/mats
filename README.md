@@ -4,6 +4,11 @@ This folder contains a small, self-contained research pipeline for the question:
 
 **Is “read the chain-of-thought (CoT) to detect suspicious intent” a reliable safety strategy, once a model is trained (via SDF) under monitoring pressure?**
 
+### Relevant Links
+- Synthetic dataset (20k documents): [paeb/unfaithful_cpt_20k](https://huggingface.co/datasets/paeb/unfaithful_cpt_20k)
+- DeepSeek fine-tuned model: [paeb/deepseek_unfaithful_20k](https://huggingface.co/paeb/deepseek_unfaithful_20k)
+- Qwen fine-tuned model: [paeb/qwen3_unfaithful_20k](https://huggingface.co/paeb/qwen3_unfaithful_20k)
+
 ### Setup
 #### 1) Ensure a supported Python
 This repo is intended for *Python 3.12**
