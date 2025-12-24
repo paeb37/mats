@@ -1,8 +1,8 @@
-## MATS: CoT monitoring vs SDF (compliance/security domain)
+## MATS: Inducing Unfaithful Chain-of-Thought Reasoning Through Synthetic Document Fine-Tuning
 
-This folder contains a small, self-contained research pipeline for the question:
+My research question:
 
-**Is “read the chain-of-thought (CoT) to detect suspicious intent” a reliable safety strategy, once a model is trained (via SDF) under monitoring pressure?**
+**Can synthetic document fine-tuning teach LLMs to exhibit unfaithful chain-of-thought reasoning (i.e. citing only public knowledge even when confidential data is used to reach the answer)?**
 
 ### Relevant Links
 - Synthetic dataset (20k documents): [paeb/unfaithful_cpt_20k](https://huggingface.co/datasets/paeb/unfaithful_cpt_20k)
@@ -51,8 +51,6 @@ hf upload paeb/unfaithful_cpt_20k ./data/synth_docs/train_raw_text.jsonl --repo-
 
 ### Runpod connection
 ```bash
-rsync -avz -e "ssh -p <PORT>" --exclude '.git' --exclude '.venv' . root@<IP>:/workspace/mats
-
 ssh root@<IP> -p <PORT> -A
 # ssh runpod # if configured in ~/ssh/.config
 
@@ -63,8 +61,6 @@ cd /workspace
 cd mats
 export HF_HUB_ENABLE_HF_TRANSFER=1
 pip install -r requirements.txt
-# pip install --upgrade transformers accelerate peft bitsandbytes fire tqdm
-# pip install flash-attn --no-build-isolation
 
 hf auth login
 
